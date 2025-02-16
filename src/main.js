@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import vertex from "../shaders/vertex.glsl";
+import fragment from "../shaders/fragment.glsl";
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'; // Import RGBELoader
 
 const scene = new THREE.Scene();
 // const cameraDistance = 5;
@@ -18,12 +21,27 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio); // Set pixel ratio for better quality
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1;
+renderer.outputEncoding = THREE.sRGBEncoding
 
 const controls = new OrbitControls(camera, renderer.domElement); // Initialize OrbitControls
 
-const geometry = new THREE.BoxGeometry(1 , 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+// Load HDRI environment map
+const rgbeLoader = new RGBELoader();
+rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    // scene.background = texture; // Set the background
+    scene.environment = texture; // Set the environment
+});
+
+const geometry = new THREE.SphereGeometry(1 , 100, 100);
+// const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const material = new THREE.ShaderMaterial({ 
+    vertexShader: vertex,
+    fragmentShader: fragment
+ });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
