@@ -1,10 +1,19 @@
 #include simplexNoise4d.glsl
 attribute vec3 tangent;
 
+uniform float uTime;
+uniform float uPositionFrequency;
+uniform float uPositionStrength;
+uniform float uTimeFrequency;
+
+uniform float uSmallWavePositionFrequency;
+uniform float uSmallWavePositionStrength;
+uniform float uSmallWaveTimeFrequency;
+
 float getBlob(vec3 position) {
     vec3 wrappedPosition = position;
-    wrappedPosition += simplexNoise4d(vec4(position * 1.0 , 1.0 * 0.5)) * 0.3;
-    return simplexNoise4d(vec4(wrappedPosition * 1.0 , 1.0 * 0.2)) * 0.5;
+    wrappedPosition += simplexNoise4d(vec4(position * uPositionFrequency , uTime * uTimeFrequency)) * uPositionStrength;
+    return simplexNoise4d(vec4(wrappedPosition * uSmallWavePositionFrequency , uTime * uSmallWaveTimeFrequency)) * uSmallWavePositionStrength;
 }
 
 void main(){

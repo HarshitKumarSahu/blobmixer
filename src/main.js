@@ -5,6 +5,7 @@ import fragment from "../shaders/fragment.glsl";
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { GUI } from 'lil-gui'; // Import lil-gui
 
 
 const scene = new THREE.Scene();
@@ -17,17 +18,16 @@ const camera = new THREE.PerspectiveCamera(
     1000
 );
 camera.position.z = 3;
-// camera.position.z = cameraDistance;
 
 const renderer = new THREE.WebGLRenderer({ 
     canvas: document.querySelector('.canvas'),
-    antialias: true
+    antialias: true,
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
-renderer.outputEncoding = THREE.sRGBEncoding
+renderer.outputEncoding = THREE.sRGBEncoding;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -38,21 +38,40 @@ rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
     scene.environment = texture;
 });
 
+const uniforms = {
+    uTime: { value: 0.0 },
+    uPositionFrequency: { value: 1.0 },
+    uPositionStrength: { value: 1.0 },
+    uTimeFrequency: { value: 1.0 },
+    uSmallWavePositionFrequency: { value: 1.0 },
+    uSmallWavePositionStrength: { value: 1.0 },
+    uSmallWaveTimeFrequency: { value: 1.0 },
+};
+
+// Create GUI
+// const gui = new GUI();
+const gui = new GUI();
+// gui.add(uniforms.uTime, 'value', 0, 10).name('Time'); 
+gui.add(uniforms.uPositionFrequency, 'value', 0, 5).name('Position Frequency');
+gui.add(uniforms.uPositionStrength, 'value', 0, 5).name('Position Strength');
+gui.add(uniforms.uTimeFrequency, 'value', 0, 5).name('Time Frequency');
+gui.add(uniforms.uSmallWavePositionFrequency, 'value', 0, 5).name('Small Wave Position Frequency');
+gui.add(uniforms.uSmallWavePositionStrength, 'value', 0, 5).name('Small Wave Position Strength');
+gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('Small Wave Time Frequency');
 
 const geometry = new THREE.IcosahedronGeometry(1 , 108, 108);
 const material = new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
     vertexShader: vertex,
-    // fragmentShader: fragment,
+    uniforms,
     color: "red",
     roughness: 0.1,
     metalness: 1,
-    // wireframe: true
 });
 
 const mergedGeometry = mergeVertices(geometry);
-mergedGeometry.computeTangents()
-console.log(mergedGeometry)
+mergedGeometry.computeTangents();
+// console.log(mergedGeometry);
 
 const blob = new THREE.Mesh(mergedGeometry, material);
 scene.add(blob);
@@ -61,9 +80,7 @@ const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta(); // seconds.
-    // blob.rotation.x += delta;
-    // blob.rotation.y += delta;
+    uniforms.uTime.value = clock.getElapsedTime();
     controls.update();
     renderer.render(scene, camera);
 }
