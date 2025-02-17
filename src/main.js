@@ -16,7 +16,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1, 
     1000
 );
-camera.position.z = 5;
+camera.position.z = 3;
 // camera.position.z = cameraDistance;
 
 const renderer = new THREE.WebGLRenderer({ 
@@ -38,13 +38,14 @@ rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
     scene.environment = texture;
 });
 
+
 const geometry = new THREE.IcosahedronGeometry(1 , 108, 108);
 const material = new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
     vertexShader: vertex,
-    fragmentShader: fragment,
+    // fragmentShader: fragment,
     color: "red",
-    roughness: 0.5,
+    roughness: 0.1,
     metalness: 1,
     // wireframe: true
 });
