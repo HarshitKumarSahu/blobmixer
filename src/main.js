@@ -46,32 +46,38 @@ const uniforms = {
     uSmallWavePositionFrequency: { value: 1.0 },
     uSmallWavePositionStrength: { value: 1.0 },
     uSmallWaveTimeFrequency: { value: 1.0 },
+    roughness: { value: 0.1 }, // Added roughness uniform
+    metalness: { value: 1.0 }   // Added metalness uniform
 };
 
 // Create GUI
-// const gui = new GUI();
 const gui = new GUI();
-// gui.add(uniforms.uTime, 'value', 0, 10).name('Time'); 
 gui.add(uniforms.uPositionFrequency, 'value', 0, 5).name('Position Frequency');
 gui.add(uniforms.uPositionStrength, 'value', 0, 5).name('Position Strength');
 gui.add(uniforms.uTimeFrequency, 'value', 0, 5).name('Time Frequency');
-gui.add(uniforms.uSmallWavePositionFrequency, 'value', 0, 5).name('Small Wave Position Frequency');
-gui.add(uniforms.uSmallWavePositionStrength, 'value', 0, 5).name('Small Wave Position Strength');
-gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('Small Wave Time Frequency');
+gui.add(uniforms.uSmallWavePositionFrequency, 'value', 0, 5).name('SWPositionFrequency');
+gui.add(uniforms.uSmallWavePositionStrength, 'value', 0, 5).name('SWPositionStrength');
+gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('SWTimeFrequency');
+gui.add(uniforms.roughness, 'value', 0, 1).name('Roughness'); // GUI for roughness
+gui.add(uniforms.metalness, 'value', 0, 1).name('Metalness'); // GUI for metalness
 
-const geometry = new THREE.IcosahedronGeometry(1 , 108, 108);
+const texture = new THREE.TextureLoader().load("./gradient/14.png");
+texture.minFilter = THREE.LinearMipMapLinearFilter; 
+texture.magFilter = THREE.LinearFilter;
+texture.colorSpace = THREE.SRGBColorSpace;
+
+const geometry = new THREE.IcosahedronGeometry(1 , 108);
 const material = new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
     vertexShader: vertex,
     uniforms,
-    color: "red",
-    roughness: 0.1,
-    metalness: 1,
+    map :texture,
+    roughness: uniforms.roughness.value, // Use uniform value for roughness
+    metalness: uniforms.metalness.value    // Use uniform value for metalness
 });
 
 const mergedGeometry = mergeVertices(geometry);
 mergedGeometry.computeTangents();
-// console.log(mergedGeometry);
 
 const blob = new THREE.Mesh(mergedGeometry, material);
 scene.add(blob);
@@ -82,6 +88,8 @@ function animate() {
     requestAnimationFrame(animate);
     uniforms.uTime.value = clock.getElapsedTime();
     controls.update();
+    material.roughness = uniforms.roughness.value; // Update material roughness
+    material.metalness = uniforms.metalness.value; // Update material metalness
     renderer.render(scene, camera);
 }
 
