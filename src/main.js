@@ -61,7 +61,7 @@ gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('SWTimeFrequency')
 gui.add(uniforms.roughness, 'value', 0, 1).name('Roughness'); // GUI for roughness
 gui.add(uniforms.metalness, 'value', 0, 1).name('Metalness'); // GUI for metalness
 
-const texture = new THREE.TextureLoader().load("./gradient/14.png");
+const texture = new THREE.TextureLoader().load("./gradient/4.png");
 texture.minFilter = THREE.LinearMipMapLinearFilter; 
 texture.magFilter = THREE.LinearFilter;
 texture.colorSpace = THREE.SRGBColorSpace;
