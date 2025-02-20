@@ -7,7 +7,6 @@ import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {Text} from 'troika-three-text';
 import textVertex from "../shaders/textVertex.glsl";
-import { GUI } from 'lil-gui'; // Import lil-gui
 import gsap from 'gsap';
 
 const loadingManager = new THREE.LoadingManager();
@@ -62,37 +61,39 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 
 // Load HDRI environment map
 
-rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = texture;
-});
-// rgbeLoader.load('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr', (texture) => {
+// rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
 //     texture.mapping = THREE.EquirectangularReflectionMapping;
 //     scene.environment = texture;
 // });
 
+rgbeLoader.load('/hdri/studio1k.hdr', (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+});
+
+
+
 const uniforms = {
     uTime: { value: 1 },
-    uPositionFrequency: { value: 1.0 },
-    uPositionStrength: { value: 1.0 },
+    uPositionFrequency: { value: blobs[currentIndex].config.uPositionFrequency },
+    uPositionStrength: { value: blobs[currentIndex].config.uPositionStrength },
     uTimeFrequency: { value: 0.3 },
-    uSmallWavePositionFrequency: { value: 2.3  },
-    uSmallWavePositionStrength: { value: 0.1 },
+    uSmallWavePositionFrequency: { value: blobs[currentIndex].config.uSmallWavePositionFrequency },
+    uSmallWavePositionStrength: { value: blobs[currentIndex].config.uSmallWavePositionStrength },
     uSmallWaveTimeFrequency: { value: 0.3 },
-    roughness: { value: 0.0 }, // Added roughness uniform
-    metalness: { value: 0.0 }   // Added metalness uniform
+    roughness: { value: blobs[currentIndex].config.roughness }, // Updated roughness uniform
+    metalness: { value: blobs[currentIndex].config.metalness }   // Updated metalness uniform
 };
 
-// Create GUI
-const gui = new GUI();
-gui.add(uniforms.uPositionFrequency, 'value', 0, 5).name('Position Frequency');
-gui.add(uniforms.uPositionStrength, 'value', 0, 5).name('Position Strength');
-gui.add(uniforms.uTimeFrequency, 'value', 0, 5).name('Time Frequency');
-gui.add(uniforms.uSmallWavePositionFrequency, 'value', 0, 5).name('SWPositionFrequency');
-gui.add(uniforms.uSmallWavePositionStrength, 'value', 0, 5).name('SWPositionStrength');
-gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('SWTimeFrequency');
-gui.add(uniforms.roughness, 'value', 0, 1).name('Roughness'); // GUI for roughness
-gui.add(uniforms.metalness, 'value', 0, 1).name('Metalness'); // GUI for metalness
+// const gui = new GUI();
+// gui.add(uniforms.uPositionFrequency, 'value', 0, 5).name('Position Frequency');
+// gui.add(uniforms.uPositionStrength, 'value', 0, 5).name('Position Strength');
+// gui.add(uniforms.uTimeFrequency, 'value', 0, 5).name('Time Frequency');
+// gui.add(uniforms.uSmallWavePositionFrequency, 'value', 0, 5).name('SWPositionFrequency');
+// gui.add(uniforms.uSmallWavePositionStrength, 'value', 0, 5).name('SWPositionStrength');
+// gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('SWTimeFrequency');
+// gui.add(uniforms.roughness, 'value', 0, 1).name('Roughness'); // GUI for roughness
+// gui.add(uniforms.metalness, 'value', 0, 1).name('Metalness'); // GUI for metalness
 
 const texture = textureLoader.load(`./gradient/${blobs[currentIndex].config.map}.png`);
 texture.minFilter = THREE.LinearMipMapLinearFilter; 
@@ -105,8 +106,14 @@ const material = new CustomShaderMaterial({
     vertexShader: vertex,
     uniforms,
     map :texture,
-    roughness: uniforms.roughness.value, // Use uniform value for roughness
-    metalness: uniforms.metalness.value ,   // Use uniform value for metalness
+    metalness: blobs[currentIndex].config.metalness,
+    roughness: blobs[currentIndex].config.roughness,
+    envMapIntensity: blobs[currentIndex].config.envMapIntensity,
+    clearcoat: blobs[currentIndex].config.clearcoat,
+    clearcoatRoughness: blobs[currentIndex].config.clearcoatRoughness,
+    transmission: blobs[currentIndex].config.transmission,
+    flatShading: blobs[currentIndex].config.flatShading,
+    wireframe: blobs[currentIndex].config.wireframe,
 });
 
 const mergedGeometry = mergeVertices(geometry);
@@ -126,7 +133,7 @@ const clock = new THREE.Clock();
 
 const textureMaterial = new THREE.ShaderMaterial({
     vertexShader: textVertex,
-    fragmentShader: `void main() { gl_FragColor = vec4(1.0); }`,
+    fragmentShader: `void main() { gl_FragColor = vec4(0.9725, 0.9725, 0.9725, 1.0); }`,
     side : THREE.DoubleSide,
     uniforms : {
         progress : { value : 0.0 },
@@ -165,7 +172,7 @@ window.addEventListener("wheel", (e) => {
 
     gsap.to(textureMaterial.uniforms.progress, {
         value : 0.5,
-        duration : 1,
+        duration : 1.5,
         ease : "linear",
         onComplete: ()=>{
             currentIndex = next;
@@ -176,13 +183,20 @@ window.addEventListener("wheel", (e) => {
 
     gsap.to(texts[currentIndex].position, {
         x : -direction * 3,
-        duration : 1,
+        duration : 1.5,
         ease : "power2.inOut"
     })
 
     gsap.to(texts[next].position, {
         x : 0,
-        duration : 1,
+        duration : 1.5,
+        ease : "power2.inOut"
+    })
+
+
+    gsap.to(blob.rotation, {
+        y : blob.rotation.y + Math.PI * 4 * -direction,
+        duration : 1.5,
         ease : "power2.inOut"
     })
 
@@ -195,18 +209,41 @@ window.addEventListener("wheel", (e) => {
         ease : "linear"
     })
 
+    updateBlob(blobs[next].config);
+
     // setTimeout(() => {
     //     isAnimating = false;
     // }, 2000);
 })
+
+function updateBlob(config) {
+    if (config.uPositionFrequency !== undefined) gsap.to(material.uniforms.uPositionFrequency, { value: config.uPositionFrequency, duration: 1, ease: 'power2.inOut' });
+    if (config.uPositionStrength !== undefined) gsap.to(material.uniforms.uPositionStrength, { value: config.uPositionStrength, duration: 1, ease: 'power2.inOut' });
+    if (config.uSmallWavePositionFrequency !== undefined) gsap.to(material.uniforms.uSmallWavePositionFrequency, { value: config.uSmallWavePositionFrequency, duration: 1, ease: 'power2.inOut' });
+    if (config.uSmallWavePositionStrength !== undefined) gsap.to(material.uniforms.uSmallWavePositionStrength, { value: config.uSmallWavePositionStrength, duration: 1, ease: 'power2.inOut' });
+    if (config.uSmallWaveTimeFrequency !== undefined) gsap.to(material.uniforms.uSmallWaveTimeFrequency, { value: config.uSmallWaveTimeFrequency, duration: 1, ease: 'power2.inOut' });
+    if (config.map !== undefined) {
+      setTimeout(() => {
+        material.map = textureLoader.load(`./gradient/${config.map}.png`);
+      }, 400);
+    }
+    if (config.roughness !== undefined) gsap.to(material, { roughness: config.roughness, duration: 1, ease: 'power2.inOut' });
+    if (config.metalness !== undefined) gsap.to(material, { metalness: config.metalness, duration: 1, ease: 'power2.inOut' });
+    if (config.envMapIntensity !== undefined) gsap.to(material, { envMapIntensity: config.envMapIntensity, duration: 1, ease: 'power2.inOut' });
+    if (config.clearcoat !== undefined) gsap.to(material, { clearcoat: config.clearcoat, duration: 1, ease: 'power2.inOut' });
+    if (config.clearcoatRoughness !== undefined) gsap.to(material, { clearcoatRoughness: config.clearcoatRoughness, duration: 1, ease: 'power2.inOut' });
+    if (config.transmission !== undefined) gsap.to(material, { transmission: config.transmission, duration: 1, ease: 'power2.inOut' });
+    if (config.flatShading !== undefined) gsap.to(material, { flatShading: config.flatShading, duration: 1, ease: 'power2.inOut' });
+    if (config.wireframe !== undefined) gsap.to(material, { wireframe: config.wireframe, duration: 1, ease: 'power2.inOut' });
+  }
 
 loadingManager.onLoad = function () {
     function animate() {
         requestAnimationFrame(animate);
         uniforms.uTime.value = clock.getElapsedTime();
         // controls.update();
-        material.roughness = uniforms.roughness.value; // Update material roughness
-        material.metalness = uniforms.metalness.value; // Update material metalness
+        // material.roughness = uniforms.roughness.value; // Update material roughness
+        // material.metalness = uniforms.metalness.value; // Update material metalness
         renderer.render(scene, camera);
     }
     const bg = new THREE.Color(blobs[currentIndex].background);
