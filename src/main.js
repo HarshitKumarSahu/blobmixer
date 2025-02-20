@@ -8,26 +8,30 @@ import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {Text} from 'troika-three-text';
 import textVertex from "../shaders/textVertex.glsl";
 import { GUI } from 'lil-gui'; // Import lil-gui
+import gsap from 'gsap';
 
 const loadingManager = new THREE.LoadingManager();
 const rgbeLoader = new RGBELoader(loadingManager);
 const textureLoader = new THREE.TextureLoader(loadingManager);
 
+let isAnimating = false;
+let currentIndex = 0;
+
 const blobs = [
     {
         name: 'Color Fusion',
         background: '#9D73F7',
-        config: { "uPositionFrequency": 1, "uPositionStrength": 0.3, "uSmallWavePositionFrequency": 0.5, "uSmallWavePositionStrength": 0.7, "roughness": 1, "metalness": 0, "envMapIntensity": 0.5, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "cosmicFusion" },
+        config: { "uPositionFrequency": 1, "uPositionStrength": 0.3, "uSmallWavePositionFrequency": 0.5, "uSmallWavePositionStrength": 0.7, "roughness": 1, "metalness": 0, "envMapIntensity": 0.5, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "cosmic-fusion" },
     },
     {
         name: 'Purple Mirror',
         background: '#5300B1',
-        config: { "uPositionFrequency": 0.584, "uPositionStrength": 0.276, "uSmallWavePositionFrequency": 0.899, "uSmallWavePositionStrength": 1.266, "roughness": 0, "metalness": 1, "envMapIntensity": 2, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "purpleRain" },
+        config: { "uPositionFrequency": 0.584, "uPositionStrength": 0.276, "uSmallWavePositionFrequency": 0.899, "uSmallWavePositionStrength": 1.266, "roughness": 0, "metalness": 1, "envMapIntensity": 2, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "purple-rain" },
     },
     {
         name: 'Alien Goo',
         background: '#45ACD8',
-        config: { "uPositionFrequency": 1.022, "uPositionStrength": 0.99, "uSmallWavePositionFrequency": 0.378, "uSmallWavePositionStrength": 0.341, "roughness": 0.292, "metalness": 0.73, "envMapIntensity": 0.86, "clearcoat": 1, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "luckyDay" },
+        config: { "uPositionFrequency": 1.022, "uPositionStrength": 0.99, "uSmallWavePositionFrequency": 0.378, "uSmallWavePositionStrength": 0.341, "roughness": 0.292, "metalness": 0.73, "envMapIntensity": 0.86, "clearcoat": 1, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "lucky-day" },
     },
 ]
 
@@ -89,7 +93,7 @@ gui.add(uniforms.uSmallWaveTimeFrequency, 'value', 0, 5).name('SWTimeFrequency')
 gui.add(uniforms.roughness, 'value', 0, 1).name('Roughness'); // GUI for roughness
 gui.add(uniforms.metalness, 'value', 0, 1).name('Metalness'); // GUI for metalness
 
-const texture = textureLoader.load("./gradient/14.png");
+const texture = textureLoader.load(`./gradient/${blobs[currentIndex].config.map}.png`);
 texture.minFilter = THREE.LinearMipMapLinearFilter; 
 texture.magFilter = THREE.LinearFilter;
 texture.colorSpace = THREE.SRGBColorSpace;
@@ -124,12 +128,12 @@ const textureMaterial = new THREE.ShaderMaterial({
     fragmentShader: `void main() { gl_FragColor = vec4(1.0); }`,
     side : THREE.DoubleSide,
     uniforms : {
-        progress : { value : 0 },
-        direction : { value : 0 }
+        progress : { value : 0.0 },
+        direction : { value : 1 }
     }
 })
 
-blobs.map((blob, index)=> {
+const texts = blobs.map((blob, index)=> {
     const myText = new Text();
     myText.text = blob.name;
     myText.font = `./font/aften_screen.woff`;
@@ -144,6 +148,31 @@ blobs.map((blob, index)=> {
     myText.sync();
     scene.add(myText);
     return myText;
+})
+
+
+
+window.addEventListener("wheel", (e) => {
+    if(isAnimating) return;
+    isAnimating = true;
+
+    let direction = Math.sign(e.deltaY);
+    let next = (currentIndex + direction + blobs.length) % blobs.length;
+
+    gsap.to(textureMaterial.uniforms.progress, {
+        value : 0.5,
+        duration : 1,
+        ease : "linear",
+        onComplete: ()=>{
+            currentIndex = next;
+            isAnimating = false;
+            textureMaterial.uniforms.progress.value = 0;
+        }
+    })
+
+    setTimeout(() => {
+        isAnimating = false;
+    }, 2000);
 })
 
 loadingManager.onLoad = function () {
