@@ -15,6 +15,7 @@
   "dependencies": {
     "lil-gui": "^0.20.0",
     "three": "^0.173.0",
-    "three-custom-shader-material": "^6.3.0"
+    "three-custom-shader-material": "^6.3.0",
+    "troika-three-text": "^0.52.3"
   }
 }
