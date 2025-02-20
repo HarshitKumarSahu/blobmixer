@@ -36,6 +36,7 @@ const blobs = [
 ]
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color("#222");
 // const cameraDistance = 5;
 // const fov = 2 * Math.atan((window.innerHeight / 2) / cameraDistance) * (180 / Math.PI);
 const camera = new THREE.PerspectiveCamera(
@@ -159,6 +160,9 @@ window.addEventListener("wheel", (e) => {
     let direction = Math.sign(e.deltaY);
     let next = (currentIndex + direction + blobs.length) % blobs.length;
 
+    texts[next].scale.set(1,1,1);
+    texts[next].position.x = direction * 3.5;
+
     gsap.to(textureMaterial.uniforms.progress, {
         value : 0.5,
         duration : 1,
@@ -170,9 +174,30 @@ window.addEventListener("wheel", (e) => {
         }
     })
 
-    setTimeout(() => {
-        isAnimating = false;
-    }, 2000);
+    gsap.to(texts[currentIndex].position, {
+        x : -direction * 3,
+        duration : 1,
+        ease : "power2.inOut"
+    })
+
+    gsap.to(texts[next].position, {
+        x : 0,
+        duration : 1,
+        ease : "power2.inOut"
+    })
+
+    const bg = new THREE.Color(blobs[next].background);
+    gsap.to(scene.background, {
+        r : bg.r,
+        g : bg.g,
+        b : bg.b,
+        duration : 1,
+        ease : "linear"
+    })
+
+    // setTimeout(() => {
+    //     isAnimating = false;
+    // }, 2000);
 })
 
 loadingManager.onLoad = function () {
@@ -184,6 +209,15 @@ loadingManager.onLoad = function () {
         material.metalness = uniforms.metalness.value; // Update material metalness
         renderer.render(scene, camera);
     }
+    const bg = new THREE.Color(blobs[currentIndex].background);
+    gsap.to(scene.background, {
+        r : bg.r,
+        g : bg.g,
+        b : bg.b,
+        duration : 1,
+        ease : "linear"
+    })
+
     animate();
     console.log('Loading complete!');
 };
