@@ -6,21 +6,30 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {Text} from 'troika-three-text';
+import textVertex from "../shaders/textVertex.glsl";
 import { GUI } from 'lil-gui'; // Import lil-gui
 
 const loadingManager = new THREE.LoadingManager();
 const rgbeLoader = new RGBELoader(loadingManager);
 const textureLoader = new THREE.TextureLoader(loadingManager);
 
-loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
-    console.log(`Started loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal} files.`);
-};
-loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
-    console.log(`Loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal} files.`);
-};
-loadingManager.onError = function (url) {
-    console.error(`There was an error loading ${url}`);
-};
+const blobs = [
+    {
+        name: 'Color Fusion',
+        background: '#9D73F7',
+        config: { "uPositionFrequency": 1, "uPositionStrength": 0.3, "uSmallWavePositionFrequency": 0.5, "uSmallWavePositionStrength": 0.7, "roughness": 1, "metalness": 0, "envMapIntensity": 0.5, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "cosmicFusion" },
+    },
+    {
+        name: 'Purple Mirror',
+        background: '#5300B1',
+        config: { "uPositionFrequency": 0.584, "uPositionStrength": 0.276, "uSmallWavePositionFrequency": 0.899, "uSmallWavePositionStrength": 1.266, "roughness": 0, "metalness": 1, "envMapIntensity": 2, "clearcoat": 0, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "purpleRain" },
+    },
+    {
+        name: 'Alien Goo',
+        background: '#45ACD8',
+        config: { "uPositionFrequency": 1.022, "uPositionStrength": 0.99, "uSmallWavePositionFrequency": 0.378, "uSmallWavePositionStrength": 0.341, "roughness": 0.292, "metalness": 0.73, "envMapIntensity": 0.86, "clearcoat": 1, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "luckyDay" },
+    },
+]
 
 const scene = new THREE.Scene();
 // const cameraDistance = 5;
@@ -58,15 +67,15 @@ rgbeLoader.load('/hdri/peppermint_powerplant_1k.hdr', (texture) => {
 // });
 
 const uniforms = {
-    uTime: { value: 0.0 },
+    uTime: { value: 1 },
     uPositionFrequency: { value: 1.0 },
     uPositionStrength: { value: 1.0 },
-    uTimeFrequency: { value: 1.0 },
-    uSmallWavePositionFrequency: { value: 1.0 },
-    uSmallWavePositionStrength: { value: 1.0 },
-    uSmallWaveTimeFrequency: { value: 1.0 },
-    roughness: { value: 0.1 }, // Added roughness uniform
-    metalness: { value: 1.0 }   // Added metalness uniform
+    uTimeFrequency: { value: 0.3 },
+    uSmallWavePositionFrequency: { value: 2.3  },
+    uSmallWavePositionStrength: { value: 0.1 },
+    uSmallWaveTimeFrequency: { value: 0.3 },
+    roughness: { value: 0.0 }, // Added roughness uniform
+    metalness: { value: 0.0 }   // Added metalness uniform
 };
 
 // Create GUI
@@ -110,6 +119,33 @@ window.addEventListener('resize', () => {
 
 const clock = new THREE.Clock();
 
+const textureMaterial = new THREE.ShaderMaterial({
+    vertexShader: textVertex,
+    fragmentShader: `void main() { gl_FragColor = vec4(1.0); }`,
+    side : THREE.DoubleSide,
+    uniforms : {
+        progress : { value : 0 },
+        direction : { value : 0 }
+    }
+})
+
+blobs.map((blob, index)=> {
+    const myText = new Text();
+    myText.text = blob.name;
+    myText.font = `./font/aften_screen.woff`;
+    myText.anchorX = "center";
+    myText.anchorY = "middle";
+    myText.material = textureMaterial;
+    myText.position.set(0,0,2);
+    if (index !== 0) myText.scale.set(0,0,0); 
+    myText.letterSpacing = -0.07;
+    myText.fontSize = window.innerWidth / 4000;
+    myText.glyphGeometryDetail = 50;
+    myText.sync();
+    scene.add(myText);
+    return myText;
+})
+
 loadingManager.onLoad = function () {
     function animate() {
         requestAnimationFrame(animate);
@@ -121,4 +157,13 @@ loadingManager.onLoad = function () {
     }
     animate();
     console.log('Loading complete!');
+};
+loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
+    console.log(`Started loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal} files.`);
+};
+loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    console.log(`Loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal} files.`);
+};
+loadingManager.onError = function (url) {
+    console.error(`There was an error loading ${url}`);
 };
