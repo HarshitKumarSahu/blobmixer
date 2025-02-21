@@ -32,6 +32,83 @@ const blobs = [
         background: '#45ACD8',
         config: { "uPositionFrequency": 1.022, "uPositionStrength": 0.99, "uSmallWavePositionFrequency": 0.378, "uSmallWavePositionStrength": 0.341, "roughness": 0.292, "metalness": 0.73, "envMapIntensity": 0.86, "clearcoat": 1, "clearcoatRoughness": 0, "transmission": 0, "flatShading": false, "wireframe": false, "map": "lucky-day" },
     },
+    {
+        name: 'Liquidity',
+        background: '#FDB38A',
+        config: { 
+            "uPositionFrequency": 1, 
+            "uPositionStrength": 1, 
+            "uSmallWavePositionFrequency": 2.275, 
+            "uSmallWavePositionStrength": 0.06, 
+            "roughness": 0.58, 
+            "metalness": 1, 
+            "envMapIntensity": 1, 
+            "clearcoat": 0, 
+            "clearcoatRoughness": 1, 
+            "transmission": 1, 
+            "flatShading": false, 
+            "wireframe": false, 
+            "map": "imaginarium" 
+        },
+    },
+    {
+        name: 'Discobrain',
+        background: '#7601F0',
+        config: { 
+            "uPositionFrequency": 0.5, 
+            "uPositionStrength": 0.575, 
+            "uSmallWavePositionFrequency": 3.5, 
+            "uSmallWavePositionStrength": 0.15, 
+            "roughness": 0.0, 
+            "metalness": 0.1, 
+            "envMapIntensity": 0, 
+            "clearcoat": 0.4, 
+            "clearcoatRoughness": 0.5, 
+            "transmission": 0.0, 
+            "flatShading": false, 
+            "wireframe": false, 
+            "map": "rainbow" 
+        },
+    },
+    {
+    name: 'Fire Fly',
+    background: '#380B16',
+    config: { 
+        "uPositionFrequency": 1, 
+        "uPositionStrength": 1.5, 
+        "uSmallWavePositionFrequency": 1, 
+        "uSmallWavePositionStrength": 0.5, 
+        "roughness": 1, 
+        "metalness": 1, 
+        "envMapIntensity": 0, 
+        "clearcoat": 1, 
+        "clearcoatRoughness": 0, 
+        "transmission": 0, 
+        "flatShading": true, 
+        "wireframe": false, 
+        "map": "passion" 
+    },
+},
+    {
+        name: 'Back Bloosom',
+        background: '#667174',
+        config: { 
+            "uPositionFrequency": 0, 
+            "uPositionStrength": 0, 
+            "uSmallWavePositionFrequency": 1.5, 
+            "uSmallWavePositionStrength": 0.7, 
+            "roughness": 1, 
+            "metalness": 0.0, 
+            "envMapIntensity": 3, 
+            "clearcoat": 1, 
+            "clearcoatRoughness": 1, 
+            "transmission": 1, 
+            "flatShading": true, 
+            "wireframe": false, 
+            "map": "blackbloom"
+        },
+    },
+
 ]
 
 const scene = new THREE.Scene();
@@ -82,7 +159,13 @@ const uniforms = {
     uSmallWavePositionStrength: { value: blobs[currentIndex].config.uSmallWavePositionStrength },
     uSmallWaveTimeFrequency: { value: 0.3 },
     roughness: { value: blobs[currentIndex].config.roughness }, // Updated roughness uniform
-    metalness: { value: blobs[currentIndex].config.metalness }   // Updated metalness uniform
+    metalness: { value: blobs[currentIndex].config.metalness },   // Updated metalness uniform
+    envMapIntensity: {value : blobs[currentIndex].config.envMapIntensity},
+    clearcoat: {value : blobs[currentIndex].config.clearcoat},
+    clearcoatRoughness: {value : blobs[currentIndex].config.clearcoatRoughness},
+    transmission: {value : blobs[currentIndex].config.transmission},
+    flatShading: {value : blobs[currentIndex].config.flatShading},
+    wireframe: {value : blobs[currentIndex].config.wireframe},
 };
 
 // const gui = new GUI();
@@ -224,7 +307,12 @@ function updateBlob(config) {
     if (config.uSmallWaveTimeFrequency !== undefined) gsap.to(material.uniforms.uSmallWaveTimeFrequency, { value: config.uSmallWaveTimeFrequency, duration: 1, ease: 'power2.inOut' });
     if (config.map !== undefined) {
       setTimeout(() => {
-        material.map = textureLoader.load(`./gradient/${config.map}.png`);
+        // material.map = textureLoader.load(`./gradient/${config.map}.png`);
+        const newTexture = textureLoader.load(`./gradient/${config.map}.png`);
+        newTexture.minFilter = THREE.LinearMipMapLinearFilter;
+        newTexture.magFilter = THREE.LinearFilter;
+        newTexture.colorSpace = THREE.SRGBColorSpace;
+        material.map = newTexture;
       }, 400);
     }
     if (config.roughness !== undefined) gsap.to(material, { roughness: config.roughness, duration: 1, ease: 'power2.inOut' });
