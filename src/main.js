@@ -4,7 +4,7 @@ import fragment from "../shaders/fragment.glsl";
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import {Text} from 'troika-three-text';
+import { Text } from 'troika-three-text';
 import textVertex from "../shaders/textVertex.glsl";
 import gsap from 'gsap';
 
@@ -152,7 +152,7 @@ const blobs = [
 ];
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#222");
+scene.background = new THREE.Color("#9D73F7");
 const camera = new THREE.PerspectiveCamera(
     75, 
     window.innerWidth / window.innerHeight, 
@@ -186,12 +186,12 @@ const uniforms = {
     uSmallWaveTimeFrequency: { value: 0.3 },
     roughness: { value: blobs[currentIndex].config.roughness },
     metalness: { value: blobs[currentIndex].config.metalness },
-    envMapIntensity: {value : blobs[currentIndex].config.envMapIntensity},
-    clearcoat: {value : blobs[currentIndex].config.clearcoat},
-    clearcoatRoughness: {value : blobs[currentIndex].config.clearcoatRoughness},
-    transmission: {value : blobs[currentIndex].config.transmission},
-    flatShading: {value : blobs[currentIndex].config.flatShading},
-    wireframe: {value : blobs[currentIndex].config.wireframe},
+    envMapIntensity: { value: blobs[currentIndex].config.envMapIntensity },
+    clearcoat: { value: blobs[currentIndex].config.clearcoat },
+    clearcoatRoughness: { value: blobs[currentIndex].config.clearcoatRoughness },
+    transmission: { value: blobs[currentIndex].config.transmission },
+    flatShading: { value: blobs[currentIndex].config.flatShading },
+    wireframe: { value: blobs[currentIndex].config.wireframe },
 };
 
 const texture = textureLoader.load(`./gradient/${blobs[currentIndex].config.map}.png`);
@@ -199,22 +199,20 @@ texture.minFilter = THREE.LinearMipMapLinearFilter;
 texture.magFilter = THREE.LinearFilter;
 texture.colorSpace = THREE.SRGBColorSpace;
 
-const geometry = new THREE.IcosahedronGeometry(1.07 , 108);
+const geometry = new THREE.IcosahedronGeometry(1.07, 108);
 const material = new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
     vertexShader: vertex,
     uniforms,
-    map :texture,
+    map: texture,
     metalness: blobs[currentIndex].config.metalness,
     roughness: blobs[currentIndex].config.roughness,
     envMapIntensity: blobs[currentIndex].config.envMapIntensity,
     clearcoat: blobs[currentIndex].config.clearcoat,
     clearcoatRoughness: blobs[currentIndex].config.clearcoatRoughness,
     transmission: blobs[currentIndex].config.transmission,
-    // flatShading: blobs[currentIndex].config.flatShading,
-    // wireframe: blobs[currentIndex].config.wireframe,
-    flatShading: blobs[currentIndex].config.flatShading, // Correct here
-    wireframe: blobs[currentIndex].config.wireframe // Correct here
+    flatShading: blobs[currentIndex].config.flatShading,
+    wireframe: blobs[currentIndex].config.wireframe
 });
 
 const mergedGeometry = mergeVertices(geometry);
@@ -234,23 +232,23 @@ const clock = new THREE.Clock();
 
 const textureMaterial = new THREE.ShaderMaterial({
     vertexShader: textVertex,
-    fragmentShader: `void main() { gl_FragColor = vec4(0.9725, 0.9725, 0.9725, 1.0); }`,
-    side : THREE.DoubleSide,
-    uniforms : {
-        progress : { value : 0.0 },
-        direction : { value : 1 }
+    fragmentShader: `void main() { gl_FragColor = vec4(1.0); }`,
+    side: THREE.DoubleSide,
+    uniforms: {
+        progress: { value: 0.0 },
+        direction: { value: 1 }
     }
-})
+});
 
-const texts = blobs.map((blob, index)=> {
+const texts = blobs.map((blob, index) => {
     const myText = new Text();
     myText.text = blob.name;
     myText.font = `./font/aften_screen.woff`;
     myText.anchorX = "center";
     myText.anchorY = "middle";
     myText.material = textureMaterial;
-    myText.position.set(0,0,2);
-    if (index !== 0) myText.scale.set(0,0,0); 
+    myText.position.set(0, 0, 2);
+    if (index !== 0) myText.scale.set(0, 0, 0); 
     myText.letterSpacing = -0.07;
     myText.fontSize = window.innerWidth / 4000;
     myText.fontWeight = 'bold';
@@ -258,58 +256,65 @@ const texts = blobs.map((blob, index)=> {
     myText.sync();
     scene.add(myText);
     return myText;
-})
+});
 
 window.addEventListener("wheel", (e) => {
-    if(isAnimating) return;
+    if (isAnimating) return;
     isAnimating = true;
 
     let direction = Math.sign(e.deltaY);
     let next = (currentIndex + direction + blobs.length) % blobs.length;
 
-    texts[next].scale.set(1,1,1);
+    texts[next].scale.set(1, 1, 1);
     texts[next].position.x = direction * 3.5;
 
     gsap.to(textureMaterial.uniforms.progress, {
-        value : 0.5,
-        duration : 1.5,
-        ease : "linear",
-        onComplete: ()=>{
+        value: 0.5,
+        duration: 1.5,
+        ease: "linear",
+        onComplete: () => {
             currentIndex = next;
             isAnimating = false;
             textureMaterial.uniforms.progress.value = 0;
         }
-    })
+    });
 
     gsap.to(texts[currentIndex].position, {
-        x : -direction * 3,
-        duration : 1.5,
-        ease : "power2.inOut"
-    })
-
-    gsap.to(texts[next].position, {
-        x : 0,
-        duration : 1.5,
-        ease : "power2.inOut"
-    })
+        x: -direction * 3,
+        duration: 1.5,
+        ease: "power2.inOut"
+    });
 
     gsap.to(blob.rotation, {
-        y : blob.rotation.y + Math.PI * 4 * -direction,
-        duration : 1.5,
-        ease : "power2.inOut"
-    })
+        y: blob.rotation.y + Math.PI * 4 * -direction,
+        duration: 1.5,
+        ease: "power2.inOut"
+    });
 
-    const bg = new THREE.Color(blobs[next].background);
+    gsap.to(texts[next].position, {
+        x: 0,
+        duration: 1.5,
+        ease: "power2.inOut"
+    });
+
+    // const bg = new THREE.Color(blobs[next].background);
+    // gsap.to(scene.background, {
+    //     r: bg.r,
+    //     g: bg.g,
+    //     b: bg.b,
+    //     duration: 1,
+    //     ease: "linear"
+    // });
+
     gsap.to(scene.background, {
-        r : bg.r,
-        g : bg.g,
-        b : bg.b,
-        duration : 1,
-        ease : "linear"
+        r: new THREE.Color(blobs[next].background).r,
+        g: new THREE.Color(blobs[next].background).g,
+        b: new THREE.Color(blobs[next].background).b,
+        duration: 1,
     })
 
     updateBlob(blobs[next].config);
-})
+});
 
 function updateBlob(config) {
     if (config.uPositionFrequency !== undefined) gsap.to(material.uniforms.uPositionFrequency, { value: config.uPositionFrequency, duration: 1, ease: 'power2.inOut' });
@@ -318,13 +323,13 @@ function updateBlob(config) {
     if (config.uSmallWavePositionStrength !== undefined) gsap.to(material.uniforms.uSmallWavePositionStrength, { value: config.uSmallWavePositionStrength, duration: 1, ease: 'power2.inOut' });
     if (config.uSmallWaveTimeFrequency !== undefined) gsap.to(material.uniforms.uSmallWaveTimeFrequency, { value: config.uSmallWaveTimeFrequency, duration: 1, ease: 'power2.inOut' });
     if (config.map !== undefined) {
-      setTimeout(() => {
-        const newTexture = textureLoader.load(`./gradient/${config.map}.png`);
-        newTexture.minFilter = THREE.LinearMipMapLinearFilter;
-        newTexture.magFilter = THREE.LinearFilter;
-        newTexture.colorSpace = THREE.SRGBColorSpace;
-        material.map = newTexture;
-      }, 400);
+        setTimeout(() => {
+            const newTexture = textureLoader.load(`./gradient/${config.map}.png`);
+            newTexture.minFilter = THREE.LinearMipMapLinearFilter;
+            newTexture.magFilter = THREE.LinearFilter;
+            newTexture.colorSpace = THREE.SRGBColorSpace;
+            material.map = newTexture;
+        }, 400);
     }
     if (config.roughness !== undefined) gsap.to(material, { roughness: config.roughness, duration: 1, ease: 'power2.inOut' });
     if (config.metalness !== undefined) gsap.to(material, { metalness: config.metalness, duration: 1, ease: 'power2.inOut' });
@@ -342,14 +347,14 @@ loadingManager.onLoad = function () {
         uniforms.uTime.value = clock.getElapsedTime();
         renderer.render(scene, camera);
     }
-    const bg = new THREE.Color(blobs[currentIndex].background);
-    gsap.to(scene.background, {
-        r : bg.r,
-        g : bg.g,
-        b : bg.b,
-        duration : 1,
-        ease : "linear"
-    })
+    // const bg = new THREE.Color(blobs[currentIndex].background);
+    // gsap.to(scene.background, {
+    //     r: bg.r,
+    //     g: bg.g,
+    //     b: bg.b,
+    //     duration: 1,
+    //     ease: "linear"
+    // });
 
     animate();
 };
