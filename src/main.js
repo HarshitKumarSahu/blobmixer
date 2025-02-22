@@ -314,6 +314,9 @@ function addLights() {
     });
 }
 
+let hasPlayedSound = false;
+const sound2 = new Audio('/sounds/slidingDoor1.wav'); 
+
 function wheelMove() {
     window.addEventListener('wheel', (event) => {
         if (isAnimating) return
@@ -353,7 +356,15 @@ function wheelMove() {
             y: blob.rotation.y + Math.PI * 4 * -direction,
             ease: 'expo',
             duration: 1,
+            onComplete: () => {
+                hasPlayedSound = false; // Reset flag after animation completes
+            }
         })
+
+        if (!hasPlayedSound) {
+            sound2.play();
+            hasPlayedSound = true;
+        }
 
         gsap.to(scene.background, {
             r: new THREE.Color(blobs[next].background).r,
@@ -428,3 +439,18 @@ function tick() {
 
     window.requestAnimationFrame(tick)
 }
+
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+// 2. Create an audio object and load the sound
+const sound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+
+// Load the audio file (replace 'your-audio-file.mp3' with your actual sound file)
+audioLoader.load('/sounds/BG5.mp3', function(buffer) {
+    sound.setBuffer(buffer);
+    sound.setLoop(true);  // Loop the sound infinitely
+    sound.setVolume(0.35); // Adjust the volume as needed
+    sound.play();         // Play the sound when the scene loads
+});
