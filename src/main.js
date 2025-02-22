@@ -55,7 +55,7 @@ const blobs = [
         },
     },
     {
-        name: 'Alien Goo',
+        name: 'Nebula Gooey',
         background: '#45ACD8',
         config: { 
             "uPositionFrequency": 1.022, 
@@ -112,7 +112,7 @@ const blobs = [
         },
     },
     {
-        name: 'Fire Fly',
+        name: 'Plasma Matrix',
         background: '#380B16',
         config: { 
             "uPositionFrequency": 1, 
