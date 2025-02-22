@@ -101,7 +101,7 @@ const blobs = [
             "transmission": 0, 
             "flatShading": true, 
             "wireframe": false, 
-            "map": "rainBow" 
+            "map": "rainbow" 
         },
     },
     {
@@ -189,7 +189,7 @@ const gradients = {
     luckyDay: textureLoader.load('./gradient/luckyDay.png'),
     passion: textureLoader.load('./gradient/passion.png'),
     purpleRain: textureLoader.load('./gradient/purpleRain.png'),
-    rainBow: textureLoader.load('./gradient/rainBow.png'),
+    rainbow: textureLoader.load('./gradient/rainbow.png'),
     blackBloom: textureLoader.load('./gradient/blackBloom.png')
 }
 
