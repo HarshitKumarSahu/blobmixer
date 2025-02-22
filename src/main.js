@@ -139,7 +139,7 @@ const blobs = [
             "transmission": 1, 
             "flatShading": true, 
             "wireframe": false, 
-            "map": "blackBloom"
+            "map": "blackbloom"
         },
     },
 ];
@@ -190,7 +190,7 @@ const gradients = {
     passion: textureLoader.load('./gradient/passion.png'),
     purpleRain: textureLoader.load('./gradient/purpleRain.png'),
     rainbow: textureLoader.load('./gradient/rainbow.png'),
-    blackBloom: textureLoader.load('./gradient/blackBloom.png')
+    blackbloom: textureLoader.load('./gradient/blackbloom.png')
 }
 
 const uniforms = {
