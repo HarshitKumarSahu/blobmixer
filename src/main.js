@@ -216,7 +216,9 @@ texture.minFilter = THREE.LinearMipMapLinearFilter;
 texture.magFilter = THREE.LinearFilter;
 texture.colorSpace = THREE.SRGBColorSpace;
 
-const geometry = new THREE.IcosahedronGeometry(1.07, 108);
+// const geometry = new THREE.IcosahedronGeometry(1.07, 108);
+
+const geometry = new THREE.IcosahedronGeometry(window.innerWidth < 600 ? 0.7 : 1.07, 108);
 const material = new CustomShaderMaterial({
     baseMaterial: THREE.MeshPhysicalMaterial,
     vertexShader: vertex,
@@ -236,7 +238,14 @@ const mergedGeometry = mergeVertices(geometry);
 mergedGeometry.computeTangents();
 
 const blob = new THREE.Mesh(mergedGeometry, material);
-blob.scale.set(0, 0, 0)
+blob.scale.set(0, 0, 0);
+
+if (window.innerWidth < 600) {
+    blob.position.set(0, -0.35, 0);
+} else {
+    blob.position.set(0, 0, 0); // Default position
+}
+// blob.position.set(0,0,0)
 scene.add(blob);
 
 const clock = new THREE.Clock();
@@ -260,7 +269,8 @@ const texts = blobs.map((blob, index) => {
     myText.anchorX = "center";
     myText.anchorY = "middle";
     myText.material = textMaterial;
-    myText.position.set(0, 0, 2);
+    myText.position.set(0, window.innerWidth < 600 ? 0.35 : 0, 2);
+    // myText.position.set(0, 0, 2);
     if (index !== 0) myText.scale.set(0, 0, 0); 
     myText.letterSpacing = -0.06;
     myText.fontSize = window.innerWidth / 4000;
@@ -316,56 +326,140 @@ function addLights() {
 
 
 
+// function wheelMove() {
+//     window.addEventListener('wheel', (event) => {
+//         if (isAnimating) return
+//         isAnimating = true
+//         const direction = Math.sign(event.deltaY)
+//         const next = (currentIndex + direction + texts.length) % texts.length
+
+//         const updateTextUniforms = (text, dir, progress) => {
+//             text.material.uniforms.progress.value = progress
+//             text.material.uniforms.direction.value = dir
+//         }
+
+//         const animateText = (text, xPosition, progressValue, duration) => {
+//             gsap.to(text.material.uniforms.progress, { value: progressValue, duration })
+//             gsap.to(text.position, { x: xPosition, duration })
+//         }
+
+//         const nextText = texts[next]
+//         const currentText = texts[currentIndex]
+
+//         updateTextUniforms(nextText, direction, 0)
+//         nextText.position.x = direction * 3.5
+//         nextText.scale.set(1, 1, 1)
+
+//         updateTextUniforms(currentText, direction, 0)
+
+//         animateText(currentText, -direction * 3.5, 0.5, 1)
+//         animateText(nextText, 0, 0.5, 1)
+
+//         gsap.to(textMaterial.uniforms.progress, {
+//             value: 0.5,
+//             duration: 1,
+//             onComplete: () => isAnimating = false
+//         })
+
+//         gsap.to(blob.rotation, {
+//             y: blob.rotation.y + Math.PI * 4 * -direction,
+//             ease: 'expo',
+//             duration: 1,
+//         })
+//         gsap.to(scene.background, {
+//             r: new THREE.Color(blobs[next].background).r,
+//             g: new THREE.Color(blobs[next].background).g,
+//             b: new THREE.Color(blobs[next].background).b,
+//             duration: 1,
+//         })
+
+//         currentIndex = next
+//         updateBlob(blobs[next].config)
+//     })
+// }
+
 function wheelMove() {
-    window.addEventListener('wheel', (event) => {
-        if (isAnimating) return
-        isAnimating = true
-        const direction = Math.sign(event.deltaY)
-        const next = (currentIndex + direction + texts.length) % texts.length
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    function handleWheel(event) {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        const direction = Math.sign(event.deltaY);
+        animateScene(direction);
+    }
+
+    function handleTouchStart(event) {
+        touchStartY = event.touches[0].clientY;
+    }
+
+    function handleTouchMove(event) {
+        if (isAnimating) return;
+
+        touchEndY = event.touches[0].clientY;
+        const deltaY = touchStartY - touchEndY;
+
+        if (Math.abs(deltaY) > 50) { // Sensitivity threshold
+            const direction = Math.sign(deltaY);
+            isAnimating = true;
+            animateScene(direction);
+            touchStartY = touchEndY; // Reset touch position
+        }
+    }
+
+    function animateScene(direction) {
+        const next = (currentIndex + direction + texts.length) % texts.length;
 
         const updateTextUniforms = (text, dir, progress) => {
-            text.material.uniforms.progress.value = progress
-            text.material.uniforms.direction.value = dir
-        }
+            text.material.uniforms.progress.value = progress;
+            text.material.uniforms.direction.value = dir;
+        };
 
         const animateText = (text, xPosition, progressValue, duration) => {
-            gsap.to(text.material.uniforms.progress, { value: progressValue, duration })
-            gsap.to(text.position, { x: xPosition, duration })
-        }
+            gsap.to(text.material.uniforms.progress, { value: progressValue, duration });
+            gsap.to(text.position, { x: xPosition, duration });
+        };
 
-        const nextText = texts[next]
-        const currentText = texts[currentIndex]
+        const nextText = texts[next];
+        const currentText = texts[currentIndex];
 
-        updateTextUniforms(nextText, direction, 0)
-        nextText.position.x = direction * 3.5
-        nextText.scale.set(1, 1, 1)
+        updateTextUniforms(nextText, direction, 0);
+        nextText.position.x = direction * 3.5;
+        nextText.scale.set(1, 1, 1);
 
-        updateTextUniforms(currentText, direction, 0)
+        updateTextUniforms(currentText, direction, 0);
 
-        animateText(currentText, -direction * 3.5, 0.5, 1)
-        animateText(nextText, 0, 0.5, 1)
+        animateText(currentText, -direction * 3.5, 0.5, 1);
+        animateText(nextText, 0, 0.5, 1);
 
         gsap.to(textMaterial.uniforms.progress, {
             value: 0.5,
             duration: 1,
             onComplete: () => isAnimating = false
-        })
+        });
 
         gsap.to(blob.rotation, {
             y: blob.rotation.y + Math.PI * 4 * -direction,
             ease: 'expo',
             duration: 1,
-        })
+        });
+
         gsap.to(scene.background, {
             r: new THREE.Color(blobs[next].background).r,
             g: new THREE.Color(blobs[next].background).g,
             b: new THREE.Color(blobs[next].background).b,
             duration: 1,
-        })
+        });
 
-        currentIndex = next
-        updateBlob(blobs[next].config)
-    })
+        currentIndex = next;
+        updateBlob(blobs[next].config);
+    }
+
+    // Event listeners for desktop and mobile
+    window.addEventListener('wheel', handleWheel);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
 }
 
 function updateBlob(config) {
