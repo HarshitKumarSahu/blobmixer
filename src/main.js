@@ -8,13 +8,6 @@ import { Text } from 'troika-three-text';
 import textVertex from "../shaders/textVertex.glsl";
 import gsap from 'gsap';
 
-const loadingManager = new THREE.LoadingManager();
-const rgbeLoader = new RGBELoader(loadingManager);
-const textureLoader = new THREE.TextureLoader(loadingManager);
-
-let isAnimating = false;
-let currentIndex = 0;
-
 const blobs = [
     {
         name: 'Color Fusion',
@@ -32,7 +25,7 @@ const blobs = [
             "transmission": 0, 
             "flatShading": false, 
             "wireframe": false, 
-            "map": "cosmic-fusion" 
+            "map": "cosmicFusion" 
         },
     },
     {
@@ -51,7 +44,7 @@ const blobs = [
             "transmission": 0, 
             "flatShading": false, 
             "wireframe": false, 
-            "map": "purple-rain" 
+            "map": "purpleRain" 
         },
     },
     {
@@ -70,7 +63,7 @@ const blobs = [
             "transmission": 0, 
             "flatShading": false, 
             "wireframe": false, 
-            "map": "lucky-day" 
+            "map": "luckyDay" 
         },
     },
     {
@@ -103,12 +96,12 @@ const blobs = [
             "roughness": 0.0, 
             "metalness": 0.1, 
             "envMapIntensity": 0, 
-            "clearcoat": 0.4, 
+            "clearcoat": 1, 
             "clearcoatRoughness": 0.5, 
-            "transmission": 0.0, 
-            "flatShading": false, 
+            "transmission": 0, 
+            "flatShading": true, 
             "wireframe": false, 
-            "map": "rainbow" 
+            "map": "rainBow" 
         },
     },
     {
@@ -146,13 +139,31 @@ const blobs = [
             "transmission": 1, 
             "flatShading": true, 
             "wireframe": false, 
-            "map": "blackbloom"
+            "map": "blackBloom"
         },
     },
 ];
 
+const loadingManager = new THREE.LoadingManager();
+const rgbeLoader = new RGBELoader(loadingManager);
+const textureLoader = new THREE.TextureLoader(loadingManager);
+
+const DEBUG = false
+const debugObject = { copyConfig }
+
+let isAnimating = false;
+let currentIndex = 0;
+
+let activeGradient = blobs[0].config.map
+const activeBackground = new THREE.Color('#222')
+
+let loadingProgress = 0
+
+
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#9D73F7");
+scene.background = activeBackground
+scene.visible = false
+
 const camera = new THREE.PerspectiveCamera(
     75, 
     window.innerWidth / window.innerHeight, 
@@ -164,6 +175,7 @@ camera.position.z = 3;
 const renderer = new THREE.WebGLRenderer({ 
     canvas: document.querySelector('.canvas'),
     antialias: true,
+    manager: loadingManager
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -171,10 +183,15 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.outputEncoding = THREE.sRGBEncoding;
 
-rgbeLoader.load('/hdri/studio1k.hdr', (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = texture;
-});
+const gradients = {
+    cosmicFusion: textureLoader.load('./gradient/cosmicFusion.png'),
+    imaginarium: textureLoader.load('./gradient/imaginarium.png'),
+    luckyDay: textureLoader.load('./gradient/luckyDay.png'),
+    passion: textureLoader.load('./gradient/passion.png'),
+    purpleRain: textureLoader.load('./gradient/purpleRain.png'),
+    rainBow: textureLoader.load('./gradient/rainBow.png'),
+    blackBloom: textureLoader.load('./gradient/blackBloom.png')
+}
 
 const uniforms = {
     uTime: { value: 1 },
@@ -219,24 +236,20 @@ const mergedGeometry = mergeVertices(geometry);
 mergedGeometry.computeTangents();
 
 const blob = new THREE.Mesh(mergedGeometry, material);
+blob.scale.set(0, 0, 0)
 scene.add(blob);
-
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
 
 const clock = new THREE.Clock();
 
-const textureMaterial = new THREE.ShaderMaterial({
+const textMaterial = new THREE.ShaderMaterial({
     vertexShader: textVertex,
     fragmentShader: `void main() { gl_FragColor = vec4(1.0); }`,
     side: THREE.DoubleSide,
     uniforms: {
+        direction: { value: 1 },
         progress: { value: 0.0 },
-        direction: { value: 1 }
+        color: { value: new THREE.Color(0xffffff) },
+        opacity: { value: 1.0 }
     }
 });
 
@@ -246,91 +259,124 @@ const texts = blobs.map((blob, index) => {
     myText.font = `./font/aften_screen.woff`;
     myText.anchorX = "center";
     myText.anchorY = "middle";
-    myText.material = textureMaterial;
+    myText.material = textMaterial;
     myText.position.set(0, 0, 2);
     if (index !== 0) myText.scale.set(0, 0, 0); 
-    myText.letterSpacing = -0.07;
+    myText.letterSpacing = -0.06;
     myText.fontSize = window.innerWidth / 4000;
     myText.fontWeight = 'bold';
     myText.glyphGeometryDetail = 30;
-    myText.sync();
+
+    gsap.delayedCall(1, () => {
+        myText.sync();
+    });
+
     scene.add(myText);
     return myText;
 });
 
-window.addEventListener("wheel", (e) => {
-    if (isAnimating) return;
-    isAnimating = true;
-
-    let direction = Math.sign(e.deltaY);
-    let next = (currentIndex + direction + blobs.length) % blobs.length;
-
-    texts[next].scale.set(1, 1, 1);
-    texts[next].position.x = direction * 3.5;
-
-    gsap.to(textureMaterial.uniforms.progress, {
-        value: 0.5,
-        duration: 1.5,
-        ease: "linear",
-        onComplete: () => {
-            currentIndex = next;
-            isAnimating = false;
-            textureMaterial.uniforms.progress.value = 0;
-        }
-    });
-
-    gsap.to(texts[currentIndex].position, {
-        x: -direction * 3,
-        duration: 1.5,
-        ease: "power2.inOut"
-    });
-
-    gsap.to(blob.rotation, {
-        y: blob.rotation.y + Math.PI * 4 * -direction,
-        duration: 1.5,
-        ease: "power2.inOut"
-    });
-
-    gsap.to(texts[next].position, {
-        x: 0,
-        duration: 1.5,
-        ease: "power2.inOut"
-    });
-
-    // const bg = new THREE.Color(blobs[next].background);
-    // gsap.to(scene.background, {
-    //     r: bg.r,
-    //     g: bg.g,
-    //     b: bg.b,
-    //     duration: 1,
-    //     ease: "linear"
-    // });
-
-    gsap.to(scene.background, {
-        r: new THREE.Color(blobs[next].background).r,
-        g: new THREE.Color(blobs[next].background).g,
-        b: new THREE.Color(blobs[next].background).b,
-        duration: 1,
+window.addEventListener('resize', () => {
+    texts.forEach(text => {
+        text.fontSize = innerWidth / 3000
     })
-
-    updateBlob(blobs[next].config);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+loaderSetup()
+addLights()
+tick()
+wheelMove()
+
+function loaderSetup() {
+    const loader = document.getElementById('loader')
+    loadingManager.onProgress = (_, loaded, total) => loadingProgress = (loaded / total) * 100
+    loadingManager.onLoad = () => {
+        gsap.to(loader, { opacity: 0, scale: 0, ease: 'expo.inOut', duration: 1, onComplete: () => loader.remove() })
+        gsap.to(blob.scale, { x: 1, y: 1, z: 1, duration: 2 })
+        gsap.to(material.color, { r: 1, g: 1, b: 1, duration: 2, ease: 'power4.in' })
+
+        const background = new THREE.Color(blobs[currentIndex].background)
+        gsap.to(scene.background, { r: background.r, g: background.g, b: background.b, duration: 2, ease: 'expo.inOut' })
+
+        updateBlob(blobs[currentIndex].config)
+        scene.visible = true
+    }
+}
+
+function addLights() {
+    new RGBELoader(loadingManager).load('/hdri/peppermint_powerplants_1k.hdr', environmentMap => {
+        environmentMap.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = environmentMap;
+        
+    });
+}
+
+function wheelMove() {
+    window.addEventListener('wheel', (event) => {
+        if (isAnimating) return
+        isAnimating = true
+        const direction = Math.sign(event.deltaY)
+        const next = (currentIndex + direction + texts.length) % texts.length
+
+        const updateTextUniforms = (text, dir, progress) => {
+            text.material.uniforms.progress.value = progress
+            text.material.uniforms.direction.value = dir
+        }
+
+        const animateText = (text, xPosition, progressValue, duration) => {
+            gsap.to(text.material.uniforms.progress, { value: progressValue, duration })
+            gsap.to(text.position, { x: xPosition, duration })
+        }
+
+        const nextText = texts[next]
+        const currentText = texts[currentIndex]
+
+        updateTextUniforms(nextText, direction, 0)
+        nextText.position.x = direction * 3.5
+        nextText.scale.set(1, 1, 1)
+
+        updateTextUniforms(currentText, direction, 0)
+
+        animateText(currentText, -direction * 3.5, 0.5, 1)
+        animateText(nextText, 0, 0.5, 1)
+
+        gsap.to(textMaterial.uniforms.progress, {
+            value: 0.5,
+            duration: 1,
+            onComplete: () => isAnimating = false
+        })
+
+        gsap.to(blob.rotation, {
+            y: blob.rotation.y + Math.PI * 4 * -direction,
+            ease: 'expo',
+            duration: 1,
+        })
+
+        gsap.to(scene.background, {
+            r: new THREE.Color(blobs[next].background).r,
+            g: new THREE.Color(blobs[next].background).g,
+            b: new THREE.Color(blobs[next].background).b,
+            duration: 1,
+        })
+
+        currentIndex = next
+        updateBlob(blobs[next].config)
+    })
+}
+
 function updateBlob(config) {
+    const progressBar = document.querySelector('.progress-bar .progress')
+    if (currentIndex === 0) gsap.fromTo(progressBar, { scaleX: 0 }, { scaleX: (currentIndex + 1) / texts.length, duration: 1 })
+    else gsap.to(progressBar, { scaleX: (currentIndex + 1) / texts.length, duration: 1 })
+
     if (config.uPositionFrequency !== undefined) gsap.to(material.uniforms.uPositionFrequency, { value: config.uPositionFrequency, duration: 1, ease: 'power2.inOut' });
     if (config.uPositionStrength !== undefined) gsap.to(material.uniforms.uPositionStrength, { value: config.uPositionStrength, duration: 1, ease: 'power2.inOut' });
     if (config.uSmallWavePositionFrequency !== undefined) gsap.to(material.uniforms.uSmallWavePositionFrequency, { value: config.uSmallWavePositionFrequency, duration: 1, ease: 'power2.inOut' });
     if (config.uSmallWavePositionStrength !== undefined) gsap.to(material.uniforms.uSmallWavePositionStrength, { value: config.uSmallWavePositionStrength, duration: 1, ease: 'power2.inOut' });
     if (config.uSmallWaveTimeFrequency !== undefined) gsap.to(material.uniforms.uSmallWaveTimeFrequency, { value: config.uSmallWaveTimeFrequency, duration: 1, ease: 'power2.inOut' });
-    if (config.map !== undefined) {
-        setTimeout(() => {
-            const newTexture = textureLoader.load(`./gradient/${config.map}.png`);
-            newTexture.minFilter = THREE.LinearMipMapLinearFilter;
-            newTexture.magFilter = THREE.LinearFilter;
-            newTexture.colorSpace = THREE.SRGBColorSpace;
-            material.map = newTexture;
-        }, 400);
-    }
     if (config.roughness !== undefined) gsap.to(material, { roughness: config.roughness, duration: 1, ease: 'power2.inOut' });
     if (config.metalness !== undefined) gsap.to(material, { metalness: config.metalness, duration: 1, ease: 'power2.inOut' });
     if (config.envMapIntensity !== undefined) gsap.to(material, { envMapIntensity: config.envMapIntensity, duration: 1, ease: 'power2.inOut' });
@@ -339,28 +385,46 @@ function updateBlob(config) {
     if (config.transmission !== undefined) gsap.to(material, { transmission: config.transmission, duration: 1, ease: 'power2.inOut' });
     if (config.flatShading !== undefined) gsap.to(material, { flatShading: config.flatShading, duration: 1, ease: 'power2.inOut' });
     if (config.wireframe !== undefined) gsap.to(material, { wireframe: config.wireframe, duration: 1, ease: 'power2.inOut' });
+
+    setTimeout(() => {
+        // if (config.flatShading !== undefined) material.flatShading = config.flatShading
+        // if (config.wireframe !== undefined) material.wireframe = config.wireframe
+        if (config.map !== undefined) {
+            material.map = gradients[config.map]
+            activeGradient = config.map
+            material.needsUpdate = true
+        }
+    }, 0.4)
+}
+function copyConfig() {
+    const config = {
+        positionFrequency: material.uniforms.uPositionFrequency.value,
+        timeFrequency: material.uniforms.uTimeFrequency.value,
+        strength: material.uniforms.uPositionStrength.value,
+        wrappedPositionFrequency: material.uniforms.uSmallWavePositionFrequency.value,
+        wrappedTimeFrequency: material.uniforms.uSmallWaveTimeFrequency.value,
+        wrappedStrength: material.uniforms.uSmallWavePositionStrength.value,
+
+        roughness: material.roughness,
+        metalness: material.metalness,
+        envMapIntensity: material.envMapIntensity,
+        clearcoat: material.clearcoat,
+        clearcoatRoughness: material.clearcoatRoughness,
+        transmission: material.transmission,
+        flatShading: material.flatShading,
+        wireframe: material.wireframe,
+        map: activeGradient,
+    }
+
+    navigator.clipboard.writeText(JSON.stringify(config))
 }
 
-loadingManager.onLoad = function () {
-    function animate() {
-        requestAnimationFrame(animate);
-        uniforms.uTime.value = clock.getElapsedTime();
-        renderer.render(scene, camera);
-    }
-    // const bg = new THREE.Color(blobs[currentIndex].background);
-    // gsap.to(scene.background, {
-    //     r: bg.r,
-    //     g: bg.g,
-    //     b: bg.b,
-    //     duration: 1,
-    //     ease: "linear"
-    // });
+function tick() {
+    uniforms.uTime.value += clock.getDelta()
+    renderer.render(scene, camera)
 
-    animate();
-};
-loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
-};
-loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
-};
-loadingManager.onError = function (url) {
-};
+    const loader = document.querySelector('#loader p')
+    if (loader) loader.innerText = `Loading: ${Math.round(loadingProgress)}%`
+
+    window.requestAnimationFrame(tick)
+}
